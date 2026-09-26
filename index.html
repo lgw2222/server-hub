@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c2128">
+<title>Server Hub</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1c2128;--card:#262c36;--raised:#313845;--ink:#e9ebf1;--muted:#8b93a5;--line:#39404e;--act:#6ea8ff;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: light){:root{--bg:#eceff4;--card:#fff;--raised:#f3f5f9;--ink:#1d2330;--muted:#69708a;--line:#d5dae3;--act:#2f6fe0}}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:620px;margin:0 auto;padding:40px 18px 60px}
+h1{font-size:34px;margin:0 0 6px;font-weight:700}
+.sub{color:var(--muted);margin:0 0 28px;font-size:17px}
+h2{font-size:15px;color:var(--muted);margin:30px 0 10px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+p{margin:0 0 10px}
+p:last-child{margin-bottom:0}
+ol{margin:0;padding-left:22px}
+li{margin-bottom:8px}
+li:last-child{margin-bottom:0}
+.copy{display:flex;gap:8px;align-items:center;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;word-break:break-all;flex:1}
+button{font:inherit;font-weight:600;font-size:15px;color:var(--bg);background:var(--ink);border:0;border-radius:10px;padding:9px 14px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+.note{color:var(--muted);font-size:15px}
+a{color:var(--act)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Server Hub</h1>
+  <p class="sub">Runs your local server apps on your own PC.</p>
+
+  <div class="card">
+    <p>This site isn't an app you use here. It holds the files Server Hub downloads when it installs or updates itself. Server Hub runs on your PC and gives you a dashboard on your phone for starting, stopping and updating your local apps.</p>
+  </div>
+
+  <h2>Server Hub's own update address</h2>
+  <div class="copy">
+    <code id="addr"></code>
+    <button id="copy">Copy</button>
+  </div>
+
+  <h2>Steps</h2>
+  <div class="card">
+    <ol><li>Download this folder and unzip it somewhere permanent on the PC, like C:\server-hub.</li><li>Install Node.js from nodejs.org if you haven't.</li><li>Double-click start.bat and leave the window open.</li><li>Open the address it prints on your phone.</li><li>Paste the address above into the Server Hub section so it can update itself later.</li></ol>
+  </div>
+
+  <p class="note" style="margin-top:26px">Only point Server Hub at repos you control. It runs whatever code it downloads.</p>
+</div>
+<script>
+const addr = location.origin + location.pathname.replace(/\/?$/, "/");
+document.getElementById("addr").textContent = addr;
+document.getElementById("copy").onclick = async (e) => {
+  try { await navigator.clipboard.writeText(addr); e.target.textContent = "Copied"; }
+  catch { e.target.textContent = "Select it"; }
+  setTimeout(() => (e.target.textContent = "Copy"), 1500);
+};
+</script>
+</body>
+</html>

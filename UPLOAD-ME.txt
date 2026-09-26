@@ -1,0 +1,4 @@
+This zip = ONE GitHub Pages site.
+Repository name to type in Pages Launcher:  server-hub
+Visibility: Public
+Resulting address: https://lgw2222.github.io/server-hub/

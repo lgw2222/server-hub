@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c2128">
+<title>Server Hub</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1c2128; --card:#262c36; --raised:#313845; --ink:#e9ebf1; --muted:#8b93a5; --line:#39404e;
+  --go:#3fbf7f; --stop:#e2b340; --bad:#ec5a5e; --act:#6ea8ff;
+  --font:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root{--bg:#eceff4;--card:#ffffff;--raised:#f3f5f9;--ink:#1d2330;--muted:#69708a;--line:#d5dae3;--act:#2f6fe0}
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px 40px}
+header{padding:8px 2px 14px}
+h1{font-size:26px;margin:0;font-weight:700}
+header p{color:var(--muted);margin:4px 0 0;font-size:15px}
+h2{font-size:15px;color:var(--muted);margin:26px 4px 10px;font-weight:600}
+.app{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+.dot.on{background:var(--go)} .dot.off{background:var(--stop)}
+.name{font-size:19px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addr{color:var(--muted);font-size:14px;margin:6px 0 0;word-break:break-all}
+.addr a{color:var(--act)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{background:var(--raised);border:1px solid var(--line);border-radius:11px;padding:10px 14px;font-weight:600;font-size:15px}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:transparent}
+.btn.warn{color:var(--bad)}
+.btn[disabled]{opacity:.5}
+.log{margin-top:10px;background:#11151b;color:#cfe3d4;border-radius:11px;padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:12.5px;line-height:1.5;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.form{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}
+label{display:grid;gap:6px;font-size:14px;color:var(--muted);font-weight:500}
+input{font:inherit;color:var(--ink);background:var(--raised);border:1px solid var(--line);border-radius:11px;padding:12px 14px;width:100%}
+.hint{color:var(--muted);font-size:14px;line-height:1.45;margin:0}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.empty{color:var(--muted);padding:18px;text-align:center;background:var(--card);border:1px dashed var(--line);border-radius:16px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:12px 18px;border-radius:13px;font-weight:600;max-width:92vw;text-align:center;transition:.2s;pointer-events:none;z-index:9}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:var(--bad);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Server Hub</h1>
+    <p>Your local apps, running on this PC.</p>
+  </header>
+
+  <div id="list"></div>
+
+  <h2>Add an app</h2>
+  <div class="form">
+    <p class="hint">Paste the app's GitHub Pages address. It needs an <code>app.json</code> at that address listing its files.</p>
+    <label>App address<input id="newUrl" placeholder="https://lgw2222.github.io/tv-hub/" autocapitalize="off" spellcheck="false"></label>
+    <div class="row"><button class="btn primary" id="addBtn">Install app</button></div>
+  </div>
+
+  <h2>Server Hub itself</h2>
+  <div class="form">
+    <p class="hint">Its own Pages address, so it can update itself the same way.</p>
+    <label>Server Hub address<input id="selfUrl" placeholder="https://lgw2222.github.io/server-hub/" autocapitalize="off" spellcheck="false"></label>
+    <div class="row">
+      <button class="btn" id="saveSelf">Save address</button>
+      <button class="btn primary" id="selfUpdate">Update Server Hub</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+let openLogs = new Set();
+let timer;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+let tt;
+function toast(msg, err = false) {
+  const t = $("#toast"); t.textContent = msg; t.className = "show" + (err ? " err" : "");
+  clearTimeout(tt); tt = setTimeout(() => (t.className = ""), err ? 5000 : 2000);
+}
+
+function card(a) {
+  const el = document.createElement("div");
+  el.className = "app";
+  el.innerHTML = `
+    <div class="top"><span class="dot ${a.running ? "on" : "off"}"></span><span class="name"></span></div>
+    <p class="addr">${a.running ? `<a href="${a.url}" target="_blank" rel="noopener">${a.url}</a>` : `stopped · port ${a.port}`}</p>
+    <div class="controls"></div>
+    <div class="log" hidden></div>`;
+  $(".name", el).textContent = a.name;
+  const c = $(".controls", el), log = $(".log", el);
+
+  const mk = (label, cls, fn) => {
+    const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label;
+    b.onclick = async () => { b.disabled = true; try { await fn(b); } catch (e) { toast(e.message, true); } b.disabled = false; };
+    c.appendChild(b); return b;
+  };
+
+  mk("Update", "primary", async () => {
+    const r = await api(`/api/apps/${a.slug}/update`, { method: "POST" });
+    if (!r.updated) return toast("Already up to date");
+    const bits = [];
+    if (r.changed.length) bits.push(`${r.changed.length} file${r.changed.length > 1 ? "s" : ""} updated`);
+    if (r.removed.length) bits.push(`${r.removed.length} removed`);
+    toast(bits.join(", ") + (r.restarted ? ", restarted" : ""));
+    refresh();
+  });
+  mk(a.running ? "Stop" : "Start", "", async () => { await api(`/api/apps/${a.slug}/${a.running ? "stop" : "start"}`, { method: "POST" }); refresh(); });
+  if (a.running) mk("Restart", "", async () => { await api(`/api/apps/${a.slug}/restart`, { method: "POST" }); toast("Restarted"); refresh(); });
+  mk(a.autostart ? "Autostart on" : "Autostart off", "", async () => { await api(`/api/apps/${a.slug}/autostart`, { method: "POST" }); refresh(); });
+  const logBtn = mk(openLogs.has(a.slug) ? "Hide log" : "Log", "", async () => {
+    if (openLogs.has(a.slug)) { openLogs.delete(a.slug); log.hidden = true; logBtn.textContent = "Log"; }
+    else { openLogs.add(a.slug); log.hidden = false; logBtn.textContent = "Hide log"; await fillLog(a.slug, log); }
+  });
+  mk("Remove", "warn", async () => {
+    if (!confirm(`Remove ${a.name} from Server Hub? Its folder stays on the PC.`)) return;
+    await api(`/api/apps/${a.slug}`, { method: "DELETE" }); toast(`${a.name} removed`); refresh();
+  });
+
+  if (openLogs.has(a.slug)) { log.hidden = false; fillLog(a.slug, log); }
+  return el;
+}
+
+async function fillLog(slug, el) {
+  try {
+    const { log } = await api(`/api/apps/${slug}/log`);
+    el.textContent = log.length ? log.join("\n") : "Nothing logged yet.";
+    el.scrollTop = el.scrollHeight;
+  } catch { el.textContent = "Couldn't read the log."; }
+}
+
+async function refresh() {
+  try {
+    const { apps, selfUrl } = await api("/api/apps");
+    const list = $("#list");
+    list.innerHTML = "";
+    if (!apps.length) list.innerHTML = '<div class="empty">No apps yet. Add one below with its Pages address.</div>';
+    apps.forEach((a) => list.appendChild(card(a)));
+    if (document.activeElement !== $("#selfUrl")) $("#selfUrl").value = selfUrl || "";
+  } catch { toast("Can't reach Server Hub. Is the window still open on the PC?", true); }
+}
+
+$("#addBtn").onclick = async () => {
+  const btn = $("#addBtn"); btn.disabled = true; btn.textContent = "Installing…";
+  try {
+    const r = await api("/api/apps", { method: "POST", body: { url: $("#newUrl").value } });
+    toast(`${r.app.name} installed and started`);
+    $("#newUrl").value = ""; refresh();
+  } catch (e) { toast(e.message, true); }
+  btn.disabled = false; btn.textContent = "Install app";
+};
+
+$("#saveSelf").onclick = async () => {
+  try { await api("/api/self", { method: "POST", body: { selfUrl: $("#selfUrl").value } }); toast("Address saved"); }
+  catch (e) { toast(e.message, true); }
+};
+
+$("#selfUpdate").onclick = async () => {
+  const btn = $("#selfUpdate"); btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const r = await api("/api/self", { method: "POST", body: { selfUrl: $("#selfUrl").value, update: true } });
+    if (!r.updated) { toast("Server Hub is already up to date"); btn.disabled = false; btn.textContent = "Update Server Hub"; return; }
+    btn.textContent = "Restarting…";
+    toast("Updated. Restarting…");
+    const start = Date.now();
+    const poll = setInterval(async () => {
+      try { await api("/api/apps"); clearInterval(poll); location.reload(); }
+      catch {
+        if (Date.now() - start > 40000) {
+          clearInterval(poll); btn.disabled = false; btn.textContent = "Update Server Hub";
+          toast("Server Hub didn't come back. Start it again on the PC.", true);
+        }
+      }
+    }, 1500);
+  } catch (e) { toast(e.message, true); btn.disabled = false; btn.textContent = "Update Server Hub"; }
+};
+
+refresh();
+timer = setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 6000);
+</script>
+</body>
+</html>

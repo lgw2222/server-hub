@@ -1,0 +1,8 @@
+{
+  "name": "Server Hub",
+  "slug": "server-hub",
+  "entry": "server.js",
+  "port": 4000,
+  "files": ["server.js", "package.json", "public/index.html", "start.bat", "README.md"],
+  "keep": ["apps.json", "hub-config.json", "apps"]
+}
